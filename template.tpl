@@ -11,6 +11,7 @@ ___INFO___
 {
   "displayName": "Beslist event",
   "description": "Beslist pixel for sending events and conversions to beslist\u0027s advertiser platform",
+  "categories": ["AFFILIATE_MARKETING", "ADVERTISING", "ATTRIBUTION", "CONVERSIONS", "MARKETING"],
   "securityGroups": [],
   "id": "cvt_temp_public_id",
   "type": "TAG",
