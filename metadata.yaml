@@ -1,5 +1,5 @@
 homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 versions:
-  - sha: 14b8c4b590eab0eb754f8399dd5c62c00a6fff6a
+  - sha: 1190e0c26b245712ce707974e45e2da74ca9280e
     changeNotes: Initial release.
