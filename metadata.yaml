@@ -1,5 +1,9 @@
 homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 versions:
+
+  - sha: c04d11d108ed82693378835d88323b4b9f8c3bfd
+    changeNotes: Fallback option for old templates
+  
   - sha: dea2e18dae878a96b73c12f28348f3432daa683e
     changeNotes: Initial release.
