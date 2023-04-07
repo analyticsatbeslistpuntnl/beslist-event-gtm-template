@@ -1,17 +1,8 @@
-___TERMS_OF_SERVICE___
-
-By creating or modifying this file you agree to Google Tag Manager's Community
-Template Gallery Developer Terms of Service available at
-https://developers.google.com/tag-manager/gallery-tos (or such other URL as
-Google may provide), as modified from time to time.
-
-
 ___INFO___
 
 {
   "displayName": "Beslist event",
   "description": "Beslist pixel for sending events and conversions to beslist\u0027s advertiser platform",
-  "categories": ["AFFILIATE_MARKETING", "ADVERTISING", "ATTRIBUTION", "CONVERSIONS", "MARKETING"],
   "securityGroups": [],
   "id": "cvt_temp_public_id",
   "type": "TAG",
@@ -133,10 +124,7 @@ if(data.context_parameters!==undefined){
 }
 
 function onSuccess(){
-  if(data.event_name !== "session_start"){
-   callInWindow("bslst_event", data.advertiser_id, "conversion", event_context, data.ecommerce);   
-  }
-
+   callInWindow("bslst_advertiser_event", data.advertiser_id, data.event_name, event_context, data.ecommerce);   
   //log("call success");
 }
 function onFailure(){
