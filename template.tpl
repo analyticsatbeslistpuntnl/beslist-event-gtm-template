@@ -49,8 +49,8 @@ ___TEMPLATE_PARAMETERS___
     "macrosInSelect": false,
     "selectItems": [
       {
-        "value": "session_start",
-        "displayValue": "session_start"
+        "value": "configuration",
+        "displayValue": "configuration"
       },
       {
         "value": "conversion",
@@ -58,12 +58,12 @@ ___TEMPLATE_PARAMETERS___
       }
     ],
     "simpleValueType": true,
-    "defaultValue": "conversion",
+    "defaultValue": "configuration",
     "valueValidators": [
       {
         "type": "REGEX",
         "args": [
-          "(session_start|conversion)"
+          "(configuration|conversion)"
         ]
       },
       {
@@ -133,7 +133,10 @@ if(data.context_parameters!==undefined){
 }
 
 function onSuccess(){
-   callInWindow("bslst_advertiser_event", data.advertiser_id, data.event_name, event_context, data.ecommerce);   
+  //Configuration does not require the triggering of an event by the template
+  if(data.event_name !== "configuration"){
+     callInWindow("bslst_event", data.advertiser_id, data.event_name, event_context, data.ecommerce);  
+  }
   //log("call success");
 }
 function onFailure(){
