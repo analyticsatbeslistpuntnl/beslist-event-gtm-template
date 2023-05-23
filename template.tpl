@@ -1,15 +1,7 @@
-___TERMS_OF_SERVICE___
-
-By creating or modifying this file you agree to Google Tag Manager's Community
-Template Gallery Developer Terms of Service available at
-https://developers.google.com/tag-manager/gallery-tos (or such other URL as
-Google may provide), as modified from time to time.
-
-
 ___INFO___
 
 {
-  "displayName": "Beslist event",
+  "displayName": "Beslist eventf",
   "description": "Beslist pixel for sending events and conversions to beslist\u0027s advertiser platform",
   "securityGroups": [],
   "id": "cvt_temp_public_id",
@@ -117,7 +109,8 @@ const injectScript = require('injectScript');
 const callInWindow = require('callInWindow');
 
 //log('data =', data);
-var pxl_endpoint = "https://ct.beslist.nl/temp_advertiser_refresh";
+var pxl_endpoint = "https://ct.beslist.nl/ct_refresh?shopid="+data.advertiser_id;
+//log(pxl_endpoint);
 var event_context = {};
 if(data.context_parameters!==undefined){
   var context_params = data.context_parameters;
@@ -266,7 +259,7 @@ ___WEB_PERMISSIONS___
             "listItem": [
               {
                 "type": 1,
-                "string": "https://ct.beslist.nl/temp_advertiser_refresh"
+                "string": "https://ct.beslist.nl/ct_refresh*"
               }
             ]
           }
