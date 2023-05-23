@@ -1,7 +1,7 @@
 ___INFO___
 
 {
-  "displayName": "Beslist eventf",
+  "displayName": "Beslist event",
   "description": "Beslist pixel for sending events and conversions to beslist\u0027s advertiser platform",
   "securityGroups": [],
   "id": "cvt_temp_public_id",
