@@ -109,7 +109,7 @@ const injectScript = require('injectScript');
 const callInWindow = require('callInWindow');
 
 //log('data =', data);
-var pxl_endpoint = "https://ct.beslist.nl/ct_refresh?shopid="+encodeUriComponent(data.advertiser_id);
+var pxl_endpoint = "https://ct.beslist.nl/ct_refresh?shopid="+encodeURIComponent(data.advertiser_id);
 //log(pxl_endpoint);
 var event_context = {};
 if(data.context_parameters!==undefined){
