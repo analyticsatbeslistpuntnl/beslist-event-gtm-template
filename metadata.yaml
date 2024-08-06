@@ -1,14 +1,13 @@
 homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 versions:
+  # Latest version
   - sha: 0cef8af461915b5a4facb310c03e2c6d8f162129
     changeNotes: Import the encodeUriComponent API and revert to encodeUriComponent
-
+  # Older versions
   - sha: 687ae328e78d363f441b91c765e4cf3b3b8d0327
     changeNotes: Changed the session_start type to configuration to make the name more semantic for its functionality
-
   - sha: c04d11d108ed82693378835d88323b4b9f8c3bfd
     changeNotes: Fallback option for old templates
-
   - sha: 14b8c4b590eab0eb754f8399dd5c62c00a6fff6a
     changeNotes: Initial release.
