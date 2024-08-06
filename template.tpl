@@ -133,7 +133,7 @@ function onSuccess(){
   //log("call success");
 }
 function onFailure(){
-  //log("no");//
+  //log("failure");//
 }
 
 //load the pxl functions if needed and cache them
