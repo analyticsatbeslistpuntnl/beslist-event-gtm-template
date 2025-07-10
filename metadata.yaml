@@ -2,22 +2,18 @@ homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 
 versions:
-  # Laatste versie – 6 aug 2024
   - sha: fdf0fe9abc375e7e77b3b86bfb05b9c0f40564a2
     changeNotes: |
-      • Verified publisher account  
-      • Fixed encodeUriComponent typo
+      Verified publisher account
+      Fixed encodeUriComponent typo
 
-  # Bug-fix encodeUriComponent – 28 jun 2024
   - sha: 0cef8af461915b5a4facb310c03e2c6d8f162129
     changeNotes: |
       Import the encodeUriComponent API and revert to encodeUriComponent.
 
-  # Config-naamwijziging – 8 apr 2023
   - sha: 687ae328e78d363f441b91c765e4cf3b3b8d0327
     changeNotes: |
-      Changed the session_start type to configuration to make the name
-      more semantic for its functionality.
+      Changed the session_start type to configuration.
 
   - sha: c04d11d108ed82693378835d88323b4b9f8c3bfd
     changeNotes: "Fallback option for old templates."
