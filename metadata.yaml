@@ -2,6 +2,11 @@ homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 
 versions:
+  # Compliant merge 2 – 10 Jul 2025
+  - sha: 4b8750e7a6a7ff40673bebb03940ecd466944066
+    changeNotes: |
+      • added categories
+
   # Compliant merge – 10 Jul 2025
   - sha: 678cb2377cbced5f7adda19964d72346d4f3de2c
     changeNotes: |
