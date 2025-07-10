@@ -6,7 +6,7 @@ versions:
   - sha: 678cb2377cbced5f7adda19964d72346d4f3de2c
     changeNotes: |
       • Merged branch *feature/compliantTag*  
-      • Verwijderde dubbele template_mpv.tpl  
+      • Verwijderde dubbele template_mpv.tpl   
       • Toegevoegd: .gitignore, correcte INFO-velden en categories  
       • Repo nu conform Google-spec (één template.tpl, geldige metadata)
 
