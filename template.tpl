@@ -145,14 +145,14 @@ data.gtmOnSuccess();
 
 
 ___WEB_PERMISSIONS___
-
 [
+  // Voor GTM-Preview logging
+  "logging",
+
+  // Toegang tot window['bslst_event'] en window['bslst_init']
   {
     "instance": {
-      "key": {
-        "publicId": "access_globals",
-        "versionId": "1"
-      },
+      "key": { "publicId": "access_globals", "versionId": "1" },
       "param": [
         {
           "key": "keys",
@@ -162,79 +162,31 @@ ___WEB_PERMISSIONS___
               {
                 "type": 3,
                 "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "key"
-                  },
-                  {
-                    "type": 1,
-                    "string": "read"
-                  },
-                  {
-                    "type": 1,
-                    "string": "write"
-                  },
-                  {
-                    "type": 1,
-                    "string": "execute"
-                  }
+                  { "type": 1, "string": "key" },
+                  { "type": 1, "string": "read" },
+                  { "type": 1, "string": "write" },
+                  { "type": 1, "string": "execute" }
                 ],
                 "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "bslst_event"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  }
+                  { "type": 1, "string": "bslst_event" },
+                  { "type": 8, "boolean": true },
+                  { "type": 8, "boolean": true },
+                  { "type": 8, "boolean": true }
                 ]
               },
               {
                 "type": 3,
                 "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "key"
-                  },
-                  {
-                    "type": 1,
-                    "string": "read"
-                  },
-                  {
-                    "type": 1,
-                    "string": "write"
-                  },
-                  {
-                    "type": 1,
-                    "string": "execute"
-                  }
+                  { "type": 1, "string": "key" },
+                  { "type": 1, "string": "read" },
+                  { "type": 1, "string": "write" },
+                  { "type": 1, "string": "execute" }
                 ],
                 "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "bslst_init"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  }
+                  { "type": 1, "string": "bslst_init" },
+                  { "type": 8, "boolean": true },
+                  { "type": 8, "boolean": true },
+                  { "type": 8, "boolean": true }
                 ]
               }
             ]
@@ -242,39 +194,30 @@ ___WEB_PERMISSIONS___
         }
       ]
     },
-    "clientAnnotations": {
-      "isEditedByUser": true
-    },
+    "clientAnnotations": { "isEditedByUser": true },
     "isRequired": true
   },
+
+  // Inject extern script ct_refresh
   {
     "instance": {
-      "key": {
-        "publicId": "inject_script",
-        "versionId": "1"
-      },
+      "key": { "publicId": "inject_script", "versionId": "1" },
       "param": [
         {
           "key": "urls",
           "value": {
             "type": 2,
             "listItem": [
-              {
-                "type": 1,
-                "string": "https://ct.beslist.nl/ct_refresh*"
-              }
+              { "type": 1, "string": "https://ct.beslist.nl/ct_refresh*" }
             ]
           }
         }
       ]
     },
-    "clientAnnotations": {
-      "isEditedByUser": true
-    },
+    "clientAnnotations": { "isEditedByUser": true },
     "isRequired": true
   }
 ]
-
 
 ___TESTS___
 
