@@ -2,44 +2,35 @@ homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 
 versions:
-  # Compliant merge 2 – 10 Jul 2025
+  # Compliant merge – 10 Jul 2025
   - sha: 8d92c503b8696f1bdc3cbc1f3f4412ef4285d277
     changeNotes: |
-      • added logging request
+      - Added logging permission
+      - YAML converted to UTF-8 and LF
 
-  # Compliant merge 2 – 10 Jul 2025
-  - sha: 4b8750e7a6a7ff40673bebb03940ecd466944066
-    changeNotes: |
-      • added categories
-
-  # Compliant merge – 10 Jul 2025
+  # Merge feature/compliantTag – 10 Jul 2025
   - sha: 678cb2377cbced5f7adda19964d72346d4f3de2c
     changeNotes: |
-      • Merged branch *feature/compliantTag*  
-      • Verwijderde dubbele template_mpv.tpl   
-      • Toegevoegd: .gitignore, correcte INFO-velden en categories  
-      • Repo nu conform Google-spec (één template.tpl, geldige metadata)
+      - Merged branch feature/compliantTag
+      - Removed duplicate template_mpv.tpl
+      - Added .gitignore, INFO fields and categories
 
-  # Laatste code-bug-fix – 6 Aug 2024
+  # Code bug fix – 6 Aug 2024
   - sha: fdf0fe9abc375e7e77b3b86bfb05b9c0f40564a2
     changeNotes: |
-      • Verified publisher account  
-      • Fixed encodeUriComponent typo
+      - Verified publisher account
+      - Fixed encodeUriComponent typo
 
-  # encodeUriComponent API + cleanup – 28 Jun 2024
+  # encodeUriComponent API – 28 Jun 2024
   - sha: 0cef8af461915b5a4facb310c03e2c6d8f162129
-    changeNotes: |
-      Import the encodeUriComponent API and revert to encodeUriComponent.
+    changeNotes: "Import the encodeUriComponent API and revert."
 
   # Config-naamwijziging – 8 Apr 2023
   - sha: 687ae328e78d363f441b91c765e4cf3b3b8d0327
-    changeNotes: |
-      Changed the session_start type to configuration.
+    changeNotes: "Changed the session_start type to configuration."
 
-  # Fallback voor oudere templates – 2022
   - sha: c04d11d108ed82693378835d88323b4b9f8c3bfd
     changeNotes: "Fallback option for old templates."
 
-  # Initial release – 2021
   - sha: 14b8c4b590eab0eb754f8399dd5c62c00a6fff6a
     changeNotes: "Initial release."
