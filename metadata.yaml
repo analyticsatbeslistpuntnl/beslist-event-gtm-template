@@ -3,6 +3,11 @@ documentation: "https://www.beslist.nl/"
 
 versions:
   # Compliant merge – 10 Jul 2025
+  - sha: f7e9d6fc7355ab7db73398506bd46ae97ce2909e
+    changeNotes: |
+      - use correct template format
+
+  # Compliant merge – 10 Jul 2025
   - sha: 155d553c87823baeef040c23bd6cd5b80e01d563
     changeNotes: |
       - Added terms of service
