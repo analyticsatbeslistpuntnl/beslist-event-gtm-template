@@ -79,6 +79,13 @@ ___TEMPLATE_PARAMETERS___
     "help": "The Beslist event template can only track session_start and conversion events."
   },
   {
+    "type": "CHECKBOX",
+    "name": "enable_spa_mode",
+    "checkboxText": "Enable SPA-mode",
+    "simpleValueType": true,
+    "help": "Enable when the tag is used on a Single Page Application. This ensures the configuration tag can be fired multiple times without reloading the page."
+  },
+  {
     "displayName": "Enter contextual event parameters",
     "name": "context_parameters",
     "simpleTableColumns": [
@@ -110,6 +117,39 @@ ___TEMPLATE_PARAMETERS___
         "displayName": "Ecommerce object",
         "simpleValueType": true,
         "help": "Enter the \"ecommerce\" object of UA or GA4 here."
+      },
+      {
+        "type": "GROUP",
+        "name": "custom_location",
+        "displayName": "Custom Location",
+        "groupStyle": "NO_ZIPPY",
+        "subParams": [
+          {
+            "type": "TEXT",
+            "name": "custom_host",
+            "displayName": "Host",
+            "simpleValueType": true
+          },
+          {
+            "type": "TEXT",
+            "name": "custom_path",
+            "displayName": "Path",
+            "simpleValueType": true
+          },
+          {
+            "type": "TEXT",
+            "name": "custom_query",
+            "displayName": "Query",
+            "simpleValueType": true
+          },
+          {
+            "type": "TEXT",
+            "name": "custom_referrer",
+            "displayName": "Referrer",
+            "simpleValueType": true
+          }
+        ],
+        "help": "Use to pass a custom location payload. Useful when running inside an iFrame or on some SPAs."
       }
     ]
   }
@@ -118,38 +158,66 @@ ___TEMPLATE_PARAMETERS___
 
 ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 
-// Enter your template code here.
-// const log = require('logToConsole');
 const injectScript = require('injectScript');
 const callInWindow = require('callInWindow');
+const setInWindow    = require('setInWindow');
+const copyFromWindow = require('copyFromWindow');
 const encodeUriComponent = require('encodeUriComponent');
 
-//log('data =', data);
 var pxl_endpoint = "https://ct.beslist.nl/ct_refresh?shopid="+encodeUriComponent(data.advertiser_id);
-//log(pxl_endpoint);
+
 var event_context = {};
-if(data.context_parameters!==undefined){
+if(data.context_parameters!==undefined) {
   var context_params = data.context_parameters;
-  //log(data.contextTable);
   if(context_params.length > 0){
-    context_params.forEach(function(pair){
-      //log(pair);
-      //log(pair.contextKey);
+    context_params.forEach(function(pair) {
       event_context[pair.custom_name] = pair.custom_value;
     });
   }
 }
 
-function onSuccess(){
-  //Configuration does not require the triggering of an event by the template
-  if(data.event_name !== "configuration"){
-     callInWindow("bslst_event", data.advertiser_id, data.event_name, event_context, data.ecommerce);
+if (data.custom_host !== undefined || data.custom_path !== undefined || data.custom_query !== undefined || data.custom_referrer !== undefined) {
+  var custom_location = {};
+
+  if (data.custom_host !== undefined) {
+    custom_location.host = data.custom_host;
   }
-  //log("call success");
+  if (data.custom_path !== undefined) {
+    custom_location.path = data.custom_path;
+  }
+  if (data.custom_query !== undefined) {
+    custom_location.query = data.custom_query;
+  }
+  if (data.custom_referrer !== undefined) {
+    custom_location.referrer = data.custom_referrer;
+  }
+
+  setInWindow("bslst_custom_location", custom_location, true);
 }
-function onFailure(){
-  //log("failure");//
+
+function isFirstInitializeThisPage() {
+  var isInitialized = copyFromWindow("_bslst_init_done");
+
+  if (isInitialized) {
+    return false;
+  }
+
+  setInWindow("_bslst_init_done", true);
+
+  return true;
 }
+
+function onSuccess(){
+  if(data.event_name === "conversion"){
+    callInWindow("bslst_event", data.advertiser_id, data.event_name, event_context, data.ecommerce);
+  }
+
+  if (data.event_name === "configuration" && data.enable_spa_mode && !isFirstInitializeThisPage()) {
+    callInWindow("bslst_initialize_session");
+  }
+}
+
+function onFailure(){}
 
 //load the pxl functions if needed and cache them
 injectScript(pxl_endpoint, onSuccess, onFailure, pxl_endpoint);
@@ -248,6 +316,123 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_initialize_session"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "_bslst_init_done"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_custom_location"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
                   }
                 ]
               }
