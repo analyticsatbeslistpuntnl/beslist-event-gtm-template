@@ -2,6 +2,11 @@ homepage: "https://www.beslist.nl/"
 documentation: "https://www.beslist.nl/"
 
 versions:
+  # SPA merge – 25 Aug 2025
+  - sha: f5e60ae3007a52da13e337a752e520455ad0d9d4
+    changeNotes: |
+      - Support for Spa 
+      
   # Compliant merge – 10 Jul 2025
   - sha: f7e9d6fc7355ab7db73398506bd46ae97ce2909e
     changeNotes: |
