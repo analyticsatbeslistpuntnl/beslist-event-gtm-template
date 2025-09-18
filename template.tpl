@@ -163,8 +163,18 @@ const callInWindow = require('callInWindow');
 const setInWindow    = require('setInWindow');
 const copyFromWindow = require('copyFromWindow');
 const encodeUriComponent = require('encodeUriComponent');
+const isConsentGranted = require('isConsentGranted');
+const addConsentListener = require('addConsentListener');
 
-var pxl_endpoint = "https://ct.beslist.nl/ct_refresh?shopid="+encodeUriComponent(data.advertiser_id);
+// Disable initializing a session when loading the script to DOM.
+const initializeSessionOnLoad = false;
+
+const queryParts = [
+  "shopid=" + encodeUriComponent(data.advertiser_id),
+  "initializeSessionOnLoad=" + (initializeSessionOnLoad ? "true" : "false")
+];
+
+const pxl_endpoint = "https://ct.beslist.nl/ct_refresh?" + queryParts.join("&");
 
 var event_context = {};
 if(data.context_parameters!==undefined) {
@@ -176,9 +186,13 @@ if(data.context_parameters!==undefined) {
   }
 }
 
-if (data.custom_host !== undefined || data.custom_path !== undefined || data.custom_query !== undefined || data.custom_referrer !== undefined) {
-  var custom_location = {};
-
+var custom_location = {};
+if (
+  data.custom_host !== undefined ||
+  data.custom_path !== undefined ||
+  data.custom_query !== undefined ||
+  data.custom_referrer !== undefined
+) {
   if (data.custom_host !== undefined) {
     custom_location.host = data.custom_host;
   }
@@ -195,35 +209,99 @@ if (data.custom_host !== undefined || data.custom_path !== undefined || data.cus
   setInWindow("bslst_custom_location", custom_location, true);
 }
 
-function isFirstInitializeThisPage() {
-  var isInitialized = copyFromWindow("_bslst_init_done");
+function handleBeslistTag() {
+  callInWindow("bslst_floodgate_send_events");
 
-  if (isInitialized) {
-    return false;
-  }
-
-  setInWindow("_bslst_init_done", true);
-
-  return true;
-}
-
-function onSuccess(){
   if(data.event_name === "conversion"){
-    callInWindow("bslst_event", data.advertiser_id, data.event_name, event_context, data.ecommerce);
+    var sentConversion = callInWindow(
+      "bslst_floodgate_has_sent_event",
+      data.advertiser_id,
+      data.event_name,
+      event_context,
+      data.ecommerce,
+      custom_location
+    );
+
+    // If conversion was sent via floodgate, skip; otherwise initialize
+    if (!sentConversion) {
+      callInWindow(
+        "bslst_event",
+        data.advertiser_id,
+        data.event_name,
+        event_context,
+        data.ecommerce,
+        custom_location
+      );
+    }
+  } else if (data.event_name === "configuration") {
+    var sessionStartReasons = callInWindow("bslst_get_session_start_reasons", custom_location) || [];
+
+    var sentSessionStart  = callInWindow(
+      "bslst_floodgate_has_sent_event",
+      data.advertiser_id,
+      "session_start",
+      {
+        shop_session_start_reasons: sessionStartReasons.join("|")
+      },
+      {},
+      custom_location
+    );
+    var sentMatchEvent = callInWindow(
+      "bslst_floodgate_has_sent_event",
+      data.advertiser_id,
+      "match_event",
+      {},
+      {},
+      custom_location
+    );
+
+    // If both were sent via floodgate, skip; otherwise initialize
+    if (!sentSessionStart || !sentMatchEvent) {
+      callInWindow("bslst_initialize_session", custom_location);
+    }
   }
 
-  if (data.event_name === "configuration" && data.enable_spa_mode && !isFirstInitializeThisPage()) {
-    callInWindow("bslst_initialize_session");
-  }
+  // Call data.gtmOnSuccess when the tag is finished.
+  data.gtmOnSuccess();
 }
 
-function onFailure(){}
+function onInjectScriptSuccess(){
+  let firedConsentHandler = false;
+
+  if (isConsentGranted('ad_storage')) {
+    handleBeslistTag();
+    return;
+  }
+
+  if (data.event_name === "conversion") {
+    callInWindow(
+      "bslst_floodgate_event",
+      data.advertiser_id,
+      data.event_name,
+      event_context,
+      data.ecommerce,
+      custom_location
+    );
+  } else if (data.event_name === "configuration") {
+    callInWindow("bslst_floodgate_initialize_session", custom_location);
+  }
+
+  addConsentListener('ad_storage', (consentType, granted) => {
+    if (firedConsentHandler || !granted) {
+      return;
+    }
+
+    firedConsentHandler = true;
+    handleBeslistTag();
+  });
+}
+
+function onInjectScriptFailure(){
+  data.gtmOnFailure();
+}
 
 //load the pxl functions if needed and cache them
-injectScript(pxl_endpoint, onSuccess, onFailure, pxl_endpoint);
-
-// Call data.gtmOnSuccess when the tag is finished.
-data.gtmOnSuccess();
+injectScript(pxl_endpoint, onInjectScriptSuccess, onInjectScriptFailure, pxl_endpoint);
 
 
 ___WEB_PERMISSIONS___
@@ -272,46 +350,7 @@ ___WEB_PERMISSIONS___
                   },
                   {
                     "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  }
-                ]
-              },
-              {
-                "type": 3,
-                "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "key"
-                  },
-                  {
-                    "type": 1,
-                    "string": "read"
-                  },
-                  {
-                    "type": 1,
-                    "string": "write"
-                  },
-                  {
-                    "type": 1,
-                    "string": "execute"
-                  }
-                ],
-                "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "bslst_init"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
+                    "boolean": false
                   },
                   {
                     "type": 8,
@@ -381,7 +420,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "_bslst_init_done"
+                    "string": "bslst_custom_location"
                   },
                   {
                     "type": 8,
@@ -420,11 +459,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "bslst_custom_location"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
+                    "string": "bslst_floodgate_send_events"
                   },
                   {
                     "type": 8,
@@ -433,6 +468,166 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_floodgate_has_sent_event"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_floodgate_initialize_session"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_floodgate_event"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_get_session_start_reasons"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
                   }
                 ]
               }
@@ -461,6 +656,59 @@ ___WEB_PERMISSIONS___
               {
                 "type": 1,
                 "string": "https://ct.beslist.nl/ct_refresh*"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "clientAnnotations": {
+      "isEditedByUser": true
+    },
+    "isRequired": true
+  },
+  {
+    "instance": {
+      "key": {
+        "publicId": "access_consent",
+        "versionId": "1"
+      },
+      "param": [
+        {
+          "key": "consentTypes",
+          "value": {
+            "type": 2,
+            "listItem": [
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "consentType"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "ad_storage"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
               }
             ]
           }
