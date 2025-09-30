@@ -3,7 +3,7 @@ documentation: "https://www.beslist.nl/"
 
 versions:
   # Floodgate merge – 30 sept 2025
-  - sha: 0c5e2c768699bf5fe25a750619b8a39382a2060b
+  - sha: c8c095133cd086cbc39076a7c9e1c92ad3b3fd1c
     changeNotes: |
       - Support of Floodgates
 
