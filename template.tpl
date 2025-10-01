@@ -263,9 +263,6 @@ function handleBeslistTag() {
       callInWindow("bslst_initialize_session", custom_location);
     }
   }
-
-  // Call data.gtmOnSuccess when the tag is finished.
-  data.gtmOnSuccess();
 }
 
 function onInjectScriptSuccess(){
@@ -273,6 +270,7 @@ function onInjectScriptSuccess(){
 
   if (isConsentGranted('ad_storage')) {
     handleBeslistTag();
+    data.gtmOnSuccess();
     return;
   }
 
@@ -297,6 +295,8 @@ function onInjectScriptSuccess(){
     firedConsentHandler = true;
     handleBeslistTag();
   });
+
+  data.gtmOnSuccess();
 }
 
 function onInjectScriptFailure(){
