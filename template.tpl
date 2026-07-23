@@ -79,13 +79,6 @@ ___TEMPLATE_PARAMETERS___
     "help": "The Beslist event template can only track session_start and conversion events."
   },
   {
-    "type": "CHECKBOX",
-    "name": "enable_spa_mode",
-    "checkboxText": "Enable SPA-mode",
-    "simpleValueType": true,
-    "help": "Enable when the tag is used on a Single Page Application. This ensures the configuration tag can be fired multiple times without reloading the page."
-  },
-  {
     "displayName": "Enter contextual event parameters",
     "name": "context_parameters",
     "simpleTableColumns": [
@@ -111,6 +104,18 @@ ___TEMPLATE_PARAMETERS___
     "groupStyle": "ZIPPY_CLOSED",
     "type": "GROUP",
     "subParams": [
+      {
+        "type": "CHECKBOX",
+        "name": "disable_cookieless_pings",
+        "checkboxText": "Disable Cookieless Pings",
+        "simpleValueType": true
+      },
+      {
+        "type": "CHECKBOX",
+        "name": "disable_event_queue",
+        "checkboxText": "Disable Event Queue",
+        "simpleValueType": true
+      },
       {
         "type": "TEXT",
         "name": "ecommerce",
@@ -161,7 +166,6 @@ ___SANDBOXED_JS_FOR_WEB_TEMPLATE___
 const injectScript = require('injectScript');
 const callInWindow = require('callInWindow');
 const setInWindow    = require('setInWindow');
-const copyFromWindow = require('copyFromWindow');
 const encodeUriComponent = require('encodeUriComponent');
 const isConsentGranted = require('isConsentGranted');
 const addConsentListener = require('addConsentListener');
@@ -186,7 +190,7 @@ if(data.context_parameters!==undefined) {
   }
 }
 
-const implementationType = "gtm_gallery_template-1.0.0";
+const implementationType = "gtm_gallery_template-1.1.0";
 setInWindow("bslst_implementation_type", implementationType, true);
 
 var custom_location = {};
@@ -212,18 +216,54 @@ if (
   setInWindow("bslst_custom_location", custom_location, true);
 }
 
-function handleBeslistTag() {
-  callInWindow("bslst_floodgate_send_events");
+function sendCookielessPing() {
+  if (data.disable_cookieless_pings === true) {
+    return;
+  }
 
-  if(data.event_name === "conversion"){
-    var sentConversion = callInWindow(
-      "bslst_floodgate_has_sent_event",
+  var consent = {
+    functional: isConsentGranted("functionality_storage"),
+    analytics: isConsentGranted("analytics_storage"),
+    marketing: isConsentGranted("ad_storage")
+  };
+
+  if (data.event_name === "conversion") {
+    callInWindow(
+      "bslst_send_cookieless_conversion_ping",
       data.advertiser_id,
-      data.event_name,
       event_context,
-      data.ecommerce,
+      consent,
       custom_location
     );
+  } else if (data.event_name === "configuration") {
+    callInWindow(
+      "bslst_send_cookieless_session_start_ping",
+      data.advertiser_id,
+      consent,
+      custom_location
+    );
+  }
+}
+
+function handleBeslistTag() {
+  var eventQueueEnabled = data.disable_event_queue !== true;
+
+  if (eventQueueEnabled) {
+    callInWindow("bslst_floodgate_send_events");
+  }
+
+  if(data.event_name === "conversion"){
+    var sentConversion = false;
+    if (eventQueueEnabled) {
+      sentConversion = callInWindow(
+        "bslst_floodgate_has_sent_event",
+        data.advertiser_id,
+        data.event_name,
+        event_context,
+        data.ecommerce,
+        custom_location
+      );
+    }
 
     // If conversion was sent via floodgate, skip; otherwise initialize
     if (!sentConversion) {
@@ -239,54 +279,60 @@ function handleBeslistTag() {
   } else if (data.event_name === "configuration") {
     var sessionStartReasons = callInWindow("bslst_get_session_start_reasons", custom_location) || [];
 
-    var sentSessionStart  = callInWindow(
-      "bslst_floodgate_has_sent_event",
-      data.advertiser_id,
-      "session_start",
-      {
-        shop_session_start_reasons: sessionStartReasons.join("|")
-      },
-      {},
-      custom_location
-    );
-    var sentMatchEvent = callInWindow(
-      "bslst_floodgate_has_sent_event",
-      data.advertiser_id,
-      "match_event",
-      {},
-      {},
-      custom_location
-    );
+    var sentSessionStart  = false;
+    var sentMatchEvent = false;
+    if (eventQueueEnabled) {
+      sentSessionStart = callInWindow(
+        "bslst_floodgate_has_sent_event",
+        data.advertiser_id,
+        "session_start",
+        {
+          shop_session_start_reasons: sessionStartReasons.join("|")
+        },
+        {},
+        custom_location
+      );
+      sentMatchEvent = callInWindow(
+        "bslst_floodgate_has_sent_event",
+        data.advertiser_id,
+        "match_event",
+        {},
+        {},
+        custom_location
+      );
+    }
 
-    // If both were sent via floodgate, skip; otherwise initialize
     if (!sentSessionStart || !sentMatchEvent) {
       callInWindow("bslst_initialize_session", custom_location);
     }
   }
 
-  // Call data.gtmOnSuccess when the tag is finished.
   data.gtmOnSuccess();
 }
 
 function onInjectScriptSuccess(){
   let firedConsentHandler = false;
 
+  sendCookielessPing();
+
   if (isConsentGranted('ad_storage')) {
     handleBeslistTag();
     return;
   }
 
-  if (data.event_name === "conversion") {
-    callInWindow(
-      "bslst_floodgate_event",
-      data.advertiser_id,
-      data.event_name,
-      event_context,
-      data.ecommerce,
-      custom_location
-    );
-  } else if (data.event_name === "configuration") {
-    callInWindow("bslst_floodgate_initialize_session", custom_location);
+  if (data.disable_event_queue !== true) {
+    if (data.event_name === "conversion") {
+      callInWindow(
+        "bslst_floodgate_event",
+        data.advertiser_id,
+        data.event_name,
+        event_context,
+        data.ecommerce,
+        custom_location
+      );
+    } else if (data.event_name === "configuration") {
+      callInWindow("bslst_floodgate_initialize_session", custom_location);
+    }
   }
 
   addConsentListener('ad_storage', (consentType, granted) => {
@@ -345,7 +391,11 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "bslst_event"
+                    "string": "bslst_implementation_type"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
                   },
                   {
                     "type": 8,
@@ -354,49 +404,6 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  }
-                ]
-              },
-              {
-                "type": 3,
-                "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "key"
-                  },
-                  {
-                    "type": 1,
-                    "string": "read"
-                  },
-                  {
-                    "type": 1,
-                    "string": "write"
-                  },
-                  {
-                    "type": 1,
-                    "string": "execute"
-                  }
-                ],
-                "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "bslst_initialize_session"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": false
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
                   }
                 ]
               },
@@ -436,6 +443,84 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_send_cookieless_conversion_ping"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_send_cookieless_session_start_ping"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
                   }
                 ]
               },
@@ -540,46 +625,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "bslst_floodgate_initialize_session"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  },
-                  {
-                    "type": 8,
-                    "boolean": false
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
-                  }
-                ]
-              },
-              {
-                "type": 3,
-                "mapKey": [
-                  {
-                    "type": 1,
-                    "string": "key"
-                  },
-                  {
-                    "type": 1,
-                    "string": "read"
-                  },
-                  {
-                    "type": 1,
-                    "string": "write"
-                  },
-                  {
-                    "type": 1,
-                    "string": "execute"
-                  }
-                ],
-                "mapValue": [
-                  {
-                    "type": 1,
-                    "string": "bslst_floodgate_event"
+                    "string": "bslst_event"
                   },
                   {
                     "type": 8,
@@ -657,11 +703,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "bslst_implementation_type"
-                  },
-                  {
-                    "type": 8,
-                    "boolean": true
+                    "string": "bslst_initialize_session"
                   },
                   {
                     "type": 8,
@@ -670,6 +712,88 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 8,
                     "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_floodgate_event"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "bslst_floodgate_initialize_session"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
                   }
                 ]
               }
@@ -741,6 +865,68 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 1,
                     "string": "ad_storage"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "consentType"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "analytics_storage"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "consentType"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "functionality_storage"
                   },
                   {
                     "type": 8,
