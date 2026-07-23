@@ -3,6 +3,12 @@ documentation: "https://www.beslist.nl/"
 
 versions:
   # Cookieless pings – 23 Jul 2026
+  - sha: eba08dfb48aa5480326ca6065b30cbb2ae1434d4
+    changeNotes: |
+      - Support for cookieless pings
+      - Optional toggles to disable cookieless pings and the event queue/floodgate
+
+  # Cookieless pings – 23 Jul 2026
   - sha: d9f0fa44270fd07372ef344df7dae2885258a0a9
     changeNotes: |
       - Support for cookieless pings
